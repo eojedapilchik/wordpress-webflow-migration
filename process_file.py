@@ -47,6 +47,13 @@ def fetch_html(permalink):
         description_tag = soup.head.find('meta', attrs={"name": "description"})
         description_content = description_tag['content'] if description_tag else None
 
+        if target_div:
+            su_note_div = target_div.find('div', class_='su-note')
+            su_note_content = str(su_note_div) if su_note_div else None
+            if su_note_content:
+                su_note_div.decompose()
+                result["su_note"] = clean_elements(su_note_content)
+
         result["title"] = title_content
         result["description"] = description_content
         if target_div:
@@ -63,7 +70,13 @@ def remove_elements(s):
     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
 
     removed_content = match.group(1) if match else None
-    cleaned = re.sub(pattern, '', s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
+    if match:
+        start, end = match.span()
+        cleaned = s[:start] + s[end:]
+    else:
+        cleaned = s
+
+    cleaned = replace_elements(cleaned)
 
     return clean_elements(cleaned), clean_elements(removed_content)
 
@@ -73,8 +86,46 @@ def clean_elements(s):
         return ""
     pattern = r'\[su_([a-z]+)(?:[^\]]+)?\]'
     cleaned = re.sub(pattern, '', s)
-    cleaned = cleaned.replace('[/su_note]', '').replace('[/su_list]', '').replace('[/su_box]', '')
+    cleaned = (cleaned.replace('[/su_note]', '').replace('[/su_list]', '')
+               .replace('[/su_box]', '').replace('[/su_highlight]', ''))
     return cleaned
+
+
+def transform_su_box(match):
+    color_class_map = {
+        "#3be863": "green",
+        "#ff826f": "red",
+    }
+    title = match.group(1)
+    color = match.group(2)
+    content = match.group(3).strip()
+    color_class = color_class_map.get(color, "blue")
+    return (f'<div class="{color_class}-highlight">'
+            f'<div class="{color_class}-highlight-cont"><img src='
+            f'\'https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3b979be8565b_icon-check.svg\'>'
+            f'{title}'
+            f'</div>'
+            f'<div>{content}</div>\n</div></br>')
+
+
+def transform_su_note(match):
+    color = match.group(1)
+    content = match.group(2).strip()
+    if color == "#fafafa":
+        return f'<div class="grey-div">\n{content}\n</div></br>'
+    return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div></br>'
+
+
+def replace_elements(input_string):
+    # Pattern for [su_box]
+    box_pattern = r'\[su_box title="(.*?)" box_color="(.*?)"\](.*?)\[/su_box\]'
+    input_string = re.sub(box_pattern, transform_su_box, input_string, flags=re.DOTALL)
+
+    # Pattern for [su_note]
+    note_pattern = r'\[su_note note_color="(.*?)" text_color=["“]#233143[”"]\](.*?)\[/su_note\]'
+    input_string = re.sub(note_pattern, transform_su_note, input_string, flags=re.DOTALL)
+
+    return input_string
 
 
 def process_rows(input_path):
@@ -92,6 +143,8 @@ def process_rows(input_path):
             headers.append('meta Title')
             headers.append('meta Description')
             headers.append('su_note')
+            headers.append('su_note2')
+            # headers.append('content_html')
 
         yield headers  # Yield headers first
 
@@ -102,8 +155,8 @@ def process_rows(input_path):
                 continue
 
             content_idx = headers.index("Content")
-            content, su_note = remove_elements(row[content_idx])
-            row[content_idx] = wrap_with_p_tags(content)
+            content, su_note = remove_elements(wrap_with_p_tags(row[content_idx]))
+            row[content_idx] = content
 
             alt_text_idx = headers.index("Images Alt Text")
             row[alt_text_idx] = clean_images_alt_text(row[alt_text_idx])
@@ -117,10 +170,15 @@ def process_rows(input_path):
             meta_title = html_response["title"] if html_response else None
             meta_description = html_response["description"] if html_response else None
 
+            content_html = html_response.get("content", "") if html_response else None
+
+            su_note2 = html_response.get("su_note", "") if html_response else None
+
             row.append(meta_title)
             row.append(meta_description)
             row.append(su_note)
-
+            row.append(su_note2)
+            # row.append(content_html)
             yield row
 
 
