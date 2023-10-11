@@ -5,7 +5,7 @@ import re
 from bs4 import BeautifulSoup
 
 
-def wrap_with_p_tags(content):
+def wrap_with_p_tags(content: str) -> str:
     lines = content.strip().split("\n")
     wrapped_lines = []
     for line in lines:
@@ -65,23 +65,16 @@ def fetch_html(permalink):
         return None
 
 
-def remove_elements(s):
-    pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\].*?\[\/su_note\])'
+def divide_elements(s: str):
+    pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
 
-    removed_content = match.group(1) if match else None
-    if match:
-        start, end = match.span()
-        cleaned = s[:start] + s[end:]
-    else:
-        cleaned = s
+    su_note = match.group(1) if match else None
 
-    cleaned = replace_elements(cleaned)
-
-    return clean_elements(cleaned), clean_elements(removed_content)
+    return str(s), str(su_note)
 
 
-def clean_elements(s):
+def clean_elements(s: str) -> str:
     if not s:
         return ""
     pattern = r'\[su_([a-z]+)(?:[^\]]+)?\]'
@@ -105,7 +98,7 @@ def transform_su_box(match):
             f'\'https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3b979be8565b_icon-check.svg\'>'
             f'{title}'
             f'</div>'
-            f'<div>{content}</div>\n</div></br>')
+            f'<div>{content}</div>\n</div><br>')
 
 
 def transform_su_note(match):
@@ -113,7 +106,7 @@ def transform_su_note(match):
     content = match.group(2).strip()
     if color == "#fafafa":
         return f'<div class="grey-div">\n{content}\n</div></br>'
-    return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div></br>'
+    return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div><br>'
 
 
 def replace_elements(input_string):
@@ -136,7 +129,7 @@ def process_rows(input_path):
     ]
 
     titles_to_skip = [title.lower() for title in titles_to_skip]
-    with open(input_path, 'r', encoding='utf-8') as csv_file:
+    with (open(input_path, 'r', encoding='utf-8') as csv_file):
         reader = csv.reader(csv_file)
         headers = next(reader)
         if 'content_html' not in headers:
@@ -155,7 +148,11 @@ def process_rows(input_path):
                 continue
 
             content_idx = headers.index("Content")
-            content, su_note = remove_elements(wrap_with_p_tags(row[content_idx]))
+            wrapped_content = wrap_with_p_tags(row[content_idx])
+            content, su_note = divide_elements(wrapped_content)
+            content = clean_elements(replace_elements(content)),
+            su_note = clean_elements(replace_elements(su_note))
+
             row[content_idx] = content
 
             alt_text_idx = headers.index("Images Alt Text")
