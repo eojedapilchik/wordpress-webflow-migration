@@ -150,7 +150,7 @@ def process_rows(input_path):
             content_idx = headers.index("Content")
             wrapped_content = wrap_with_p_tags(row[content_idx])
             content, su_note = divide_elements(wrapped_content)
-            content = clean_elements(replace_elements(content)),
+            content = clean_elements(replace_elements(content))
             su_note = clean_elements(replace_elements(su_note))
 
             row[content_idx] = content
