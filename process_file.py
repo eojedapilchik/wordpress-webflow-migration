@@ -178,11 +178,15 @@ def replace_image(img_tag, new_attributes):
     src_match = re.search(r'src="([^"]+)"', img_tag)
     if src_match:
         src = src_match.group(1)
-        # Check if the src is in the list of excluded URLs
         if src in exclude_src:
             return img_tag
-    # Replace the entire img tag with the new attributes
-    return f'<img {new_attributes}>'
+        # Replace or add width and height attributes
+        if re.search(r'(width|height)="[^"]*"', img_tag):
+            img_tag = re.sub(r'(width|height)="[^"]*"', new_attributes, img_tag)
+        else:
+            img_tag = img_tag.replace('<img', f'<img {new_attributes}')
+
+    return img_tag
 
 
 def replace_elements(input_string):
