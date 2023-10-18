@@ -22,7 +22,7 @@ def extractH2(centent:str):
     motif = r'<h2>(.*?)<\/h2>'
     return re.findall(motif, centent, re.DOTALL)
 
-def createTitleColumn(reader_csv):
+def createLetterColumn(reader_csv):
     for ligne in reader_csv:
         # Utiliser regex pour extraire le contenu de <h2> de la colonne "Content"
         content = ligne['Content']
