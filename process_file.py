@@ -157,6 +157,13 @@ def transform_su_note(match):
     return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div><br>'
 
 
+def remove_images(text):
+    img_pattern = r'<img class="alignnone size-full wp-image-\d+"[^>]*>'
+    text_without_images = re.sub(img_pattern, '', text)
+
+    return text_without_images
+
+
 def replace_elements(input_string):
     # Pattern for [su_box]
     box_pattern = r'\[su_box title="(.*?)" box_color="(.*?)"\](.*?)\[/su_box\]'
@@ -212,6 +219,7 @@ def process_rows(input_path):
             replace = category != "Poszukiwanie pracy"
             content, su_note = divide_elements(content, replace)
             content = fix_div_tags(clean_elements(replace_elements(content)))
+            content = remove_images(content)
             su_note = clean_elements(replace_elements(su_note))
 
             row[content_idx] = content
