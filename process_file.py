@@ -166,8 +166,27 @@ def remove_images(text):
 
 def replace_images_with_attributes(text, new_attributes):
     img_pattern = r'<img[^>]*>'
-    text_with_replaced_images = re.sub(img_pattern, f'<img {new_attributes}>', text)
+    text_with_replaced_images = re.sub(img_pattern, lambda match: replace_image(match.group(0), new_attributes), text)
     return text_with_replaced_images
+
+
+def replace_image(img_tag, new_attributes):
+    exclude_src = [
+        "https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3bca63e8565c_Group.svg",
+        "https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3b979be8565b_icon-check.svg",
+    ]
+    src_match = re.search(r'src="([^"]+)"', img_tag)
+    if src_match:
+        src = src_match.group(1)
+        if src in exclude_src:
+            return img_tag
+        # Replace or add width and height attributes
+        if re.search(r'(width|height)="[^"]*"', img_tag):
+            img_tag = re.sub(r'(width|height)="[^"]*"', new_attributes, img_tag)
+        else:
+            img_tag = img_tag.replace('<img', f'<img {new_attributes}')
+
+    return img_tag
 
 
 def replace_elements(input_string):
