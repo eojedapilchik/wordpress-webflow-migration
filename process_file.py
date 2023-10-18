@@ -158,19 +158,19 @@ def transform_su_note(match):
 
 
 def remove_images(text):
-    img_pattern = r'<img class="alignnone size-full wp-image-\d+"[^>]*>'
+    img_pattern = r'<img[^>]*class\s*=\s*"[^"]*alignnone size-full wp-image-\d+[^"]*"[^>]*>'
     text_without_images = re.sub(img_pattern, '', text)
 
     return text_without_images
 
 
-def replace_images_with_attributes(text, new_attributes):
+def replace_images_with_attributes(text):
     img_pattern = r'<img[^>]*>'
-    text_with_replaced_images = re.sub(img_pattern, lambda match: replace_image(match.group(0), new_attributes), text)
+    text_with_replaced_images = re.sub(img_pattern, lambda match: replace_image(match.group(0)), text)
     return text_with_replaced_images
 
 
-def replace_image(img_tag, new_attributes):
+def replace_image(img_tag):
     exclude_src = [
         "https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3bca63e8565c_Group.svg",
         "https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3b979be8565b_icon-check.svg",
@@ -181,10 +181,8 @@ def replace_image(img_tag, new_attributes):
         if src in exclude_src:
             return img_tag
         # Replace or add width and height attributes
-        if re.search(r'(width|height)="[^"]*"', img_tag):
-            img_tag = re.sub(r'(width|height)="[^"]*"', new_attributes, img_tag)
-        else:
-            img_tag = img_tag.replace('<img', f'<img {new_attributes}')
+        img_tag = re.sub(r'(width="[^"]*")', "width=\"700\"", img_tag)
+        img_tag = re.sub(r'(height="[^"]*")', 'height="auto"', img_tag)
 
     return img_tag
 
@@ -245,7 +243,7 @@ def process_rows(input_path):
             content, su_note = divide_elements(content, replace)
             content = fix_div_tags(clean_elements(replace_elements(content)))
             content = remove_images(content)
-            content = replace_images_with_attributes(content, 'width="700" height="auto"')
+            content = replace_images_with_attributes(content)
             su_note = clean_elements(replace_elements(su_note))
 
             row[content_idx] = content
