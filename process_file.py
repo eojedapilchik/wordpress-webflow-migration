@@ -164,6 +164,12 @@ def remove_images(text):
     return text_without_images
 
 
+def replace_images_with_attributes(text, new_attributes):
+    img_pattern = r'<img[^>]*>'
+    text_with_replaced_images = re.sub(img_pattern, f'<img {new_attributes}>', text)
+    return text_with_replaced_images
+
+
 def replace_elements(input_string):
     # Pattern for [su_box]
     box_pattern = r'\[su_box title="(.*?)" box_color="(.*?)"\](.*?)\[/su_box\]'
@@ -220,6 +226,7 @@ def process_rows(input_path):
             content, su_note = divide_elements(content, replace)
             content = fix_div_tags(clean_elements(replace_elements(content)))
             content = remove_images(content)
+            content = replace_images_with_attributes(content, 'width="700" height="auto"')
             su_note = clean_elements(replace_elements(su_note))
 
             row[content_idx] = content
