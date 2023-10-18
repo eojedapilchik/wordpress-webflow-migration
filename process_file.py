@@ -152,13 +152,14 @@ def transform_su_box(match):
 def transform_su_note(match):
     color = match.group(1)
     content = match.group(2).strip()
+    content = re.sub(r'<p>', '<p class="lh-2">', content)
     if color == "#fafafa":
         return f'<div class="grey-div">\n{content}\n</div><br>'
     return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div><br>'
 
 
 def remove_images(text):
-    img_pattern = r'<img[^>]*class\s*=\s*"[^"]*alignnone size-full wp-image-\d+[^"]*"[^>]*>'
+    img_pattern = r'<img[^>]*class\s*=\s*"[^"]*(alignnone\s+)?size-full\s+wp-image-\d+[^"]*"[^>]*>'
     text_without_images = re.sub(img_pattern, '', text)
 
     return text_without_images
