@@ -2,6 +2,7 @@ import csv
 import os
 import requests
 import re
+import datetime
 from bs4 import BeautifulSoup
 
 
@@ -65,11 +66,13 @@ def fetch_html(permalink):
         return None
 
 
-def divide_elements(s: str):
+def divide_elements(s: str, replace_su_note=True):
     pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
 
     su_note = match.group(1) if match else None
+    if replace_su_note:
+        s = re.sub(pattern, '', s, count=1, flags=re.DOTALL)
 
     return str(s), str(su_note)
 
@@ -84,28 +87,70 @@ def clean_elements(s: str) -> str:
     return cleaned
 
 
+def remove_span_colors(s: str) -> str:
+    if not s:
+        return ""
+
+    # Regex pattern to match <span data-color="...."> and its closing tag </span>
+    pattern = r'<span data-color="[^"]*">(.*?)</span>'
+
+    # Replace matched tags with the content inside them
+    cleaned = re.sub(pattern, r'\1', s)
+
+    return cleaned
+
+
+def convert_br_tags(s: str) -> str:
+    return s.replace('</br>', '<br>')
+
+
+def add_attribute(s: str) -> str:
+    # Pattern to match <h2> and <ul> tags
+    pattern_h2 = r'<h2>'
+    pattern_ul = r'<ul>'
+
+    # Add class="mb-24" to <h2> and <ul> tags
+    s = re.sub(pattern_h2, r'<h2 class="mb-24">', s)
+    s = re.sub(pattern_ul, r'<ul class="mb-24">', s)
+
+    return s
+
+
+def fix_div_tags(s: str) -> str:
+    # Pattern to match <div> tags
+    cleaned = s.replace('</div></div><br></p>', '</p></div>\n</div><br>')
+    cleaned = cleaned.replace('</div><br></p>', '</p></div>\n</div>')
+    return cleaned
+
+
 def transform_su_box(match):
     color_class_map = {
-        "#3be863": "green",
-        "#ff826f": "red",
+        "#3be863": [
+            "green",
+            "https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3b979be8565b_icon-check.svg",
+        ],
+        "#ff826f": [
+            "red",
+            "https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3bca63e8565c_Group.svg",
+        ],
     }
     title = match.group(1)
     color = match.group(2)
     content = match.group(3).strip()
     color_class = color_class_map.get(color, "blue")
-    return (f'<div class="{color_class}-highlight">'
-            f'<div class="{color_class}-highlight-cont"><img src='
-            f'\'https://assets.website-files.com/639975e5f44de65498a14a0e/63a0b5fcd66a3b979be8565b_icon-check.svg\'>'
+    return (f'<div class="{color_class[0]}-highlight">'
+            f'<div class="{color_class[0]}-highlight-cont"><img src='
+            f'\'{color_class[1]}\'>'
             f'{title}'
             f'</div>'
-            f'<div>{content}</div>\n</div><br>')
+            f'<div>{content}</div></div><br>')
 
 
 def transform_su_note(match):
     color = match.group(1)
     content = match.group(2).strip()
     if color == "#fafafa":
-        return f'<div class="grey-div">\n{content}\n</div></br>'
+        return f'<div class="grey-div">\n{content}\n</div><br>'
     return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div><br>'
 
 
@@ -128,6 +173,9 @@ def process_rows(input_path):
         "Przykłady życiorysów dla menedżera ds. marketingu"
     ]
 
+    titles_to_include = [
+    ]
+
     titles_to_skip = [title.lower() for title in titles_to_skip]
     with (open(input_path, 'r', encoding='utf-8') as csv_file):
         reader = csv.reader(csv_file)
@@ -136,21 +184,31 @@ def process_rows(input_path):
             headers.append('meta Title')
             headers.append('meta Description')
             headers.append('su_note')
-            headers.append('su_note2')
+            # headers.append('su_note2')
             # headers.append('content_html')
 
         yield headers  # Yield headers first
 
         for row in reader:
             title = row[2]
+            category = row[10]
             if title.lower() in titles_to_skip:
                 print(f"Skipping ${title}")
                 continue
 
+            if titles_to_include and len(titles_to_include) > 0:
+                if title not in titles_to_include:
+                    print(f"Skipping ${title}")
+                    continue
+
             content_idx = headers.index("Content")
             wrapped_content = wrap_with_p_tags(row[content_idx])
-            content, su_note = divide_elements(wrapped_content)
-            content = clean_elements(replace_elements(content))
+            content = remove_span_colors(wrapped_content)
+            content = convert_br_tags(content)
+            content = add_attribute(content)
+            replace = category != "Poszukiwanie pracy"
+            content, su_note = divide_elements(content, replace)
+            content = fix_div_tags(clean_elements(replace_elements(content)))
             su_note = clean_elements(replace_elements(su_note))
 
             row[content_idx] = content
@@ -167,14 +225,14 @@ def process_rows(input_path):
             meta_title = html_response["title"] if html_response else None
             meta_description = html_response["description"] if html_response else None
 
-            content_html = html_response.get("content", "") if html_response else None
+            # content_html = html_response.get("content", "") if html_response else None
 
             su_note2 = html_response.get("su_note", "") if html_response else None
 
             row.append(meta_title)
             row.append(meta_description)
             row.append(su_note)
-            row.append(su_note2)
+            # row.append(su_note2)
             # row.append(content_html)
             yield row
 
@@ -192,32 +250,62 @@ def process_csv(input_path, output_path):
 def process_csv_batch(input_path, output_folder):
     base_name = os.path.basename(input_path).replace(".csv", "")
 
-    file_count = 1
-    row_count = 0
-    out_csv_file = open(os.path.join(output_folder, f"{base_name}_processed_{file_count}.csv"), 'w', newline='',
-                        encoding='utf-8')
-    writer = csv.writer(out_csv_file)
+    file_count_pracy = 1
+    file_count_cv = 1
+    row_count_pracy = 0
+    row_count_cv = 0
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+    out_csv_file_pracy = open(os.path.join(output_folder, f"{timestamp}_pracy_processed_{file_count_pracy}.csv"),
+                              'w', newline='', encoding='utf-8')
+    out_csv_file_cv = open(os.path.join(output_folder, f"{timestamp}_cv_processed_{file_count_cv}.csv"), 'w',
+                           newline='', encoding='utf-8')
+    writer_pracy = csv.writer(out_csv_file_pracy)
+    writer_cv = csv.writer(out_csv_file_cv)
 
     for row in process_rows(input_path):  # Iterating over the generator
+        category = row[10] if len(row) > 10 else None
+
+        if category == "Poszukiwanie pracy":
+            writer = writer_pracy
+            row_count = row_count_pracy
+            out_csv_file = out_csv_file_pracy
+        else:
+            writer = writer_cv
+            row_count = row_count_cv
+            out_csv_file = out_csv_file_cv
+
         if row_count == 0:  # if it's the header
             writer.writerow(row)
-            row_count += 1
-            continue
+        else:
+            if row_count % 50 == 0:  # For every 100 rows, switch the output file
+                out_csv_file.close()
+                if category == "Poszukiwanie pracy":
+                    file_count_pracy += 1
+                    out_csv_file_pracy = open(
+                        os.path.join(output_folder, f"{timestamp}_pracy_processed_{file_count_pracy}.csv"), 'w',
+                        newline='', encoding='utf-8')
+                    writer_pracy = csv.writer(out_csv_file_pracy)
+                    writer_pracy.writerow(next(process_rows(input_path)))  # Write headers to the new file
+                    writer = writer_pracy
+                else:
+                    file_count_cv += 1
+                    out_csv_file_cv = open(os.path.join(output_folder, f"{timestamp}_cv_processed_{file_count_cv}.csv"),
+                                           'w', newline='', encoding='utf-8')
+                    writer_cv = csv.writer(out_csv_file_cv)
+                    writer_cv.writerow(next(process_rows(input_path)))  # Write headers to the new file
+                    writer = writer_cv
+            print(f"Processed row {row_count}")
+            writer.writerow(row)
 
-        if row_count % 50 == 0:  # For every 100 rows, switch the output file
-            out_csv_file.close()
-            file_count += 1
-            out_csv_file = open(os.path.join(output_folder, f"{base_name}_processed_{file_count}.csv"), 'w', newline='',
-                                encoding='utf-8')
-            print(f"[+] A new file has been created: {base_name}_processed_{file_count}.csv")
-            writer = csv.writer(out_csv_file)
-            writer.writerow(next(process_rows(input_path)))  # Write headers to the new file
+        if category == "Poszukiwanie pracy":
+            row_count_pracy += 1
+        else:
+            row_count_cv += 1
 
-        print(f"Processed row {row_count}")
-        writer.writerow(row)
-        row_count += 1
-
-    out_csv_file.close()
+    out_csv_file_pracy.close()
+    out_csv_file_cv.close()
 
 
 def main():

@@ -1,0 +1,7 @@
+# created by virtualenv automatically
+*.csv
+venv/
+.env
+*.iml
+.idea/
+
