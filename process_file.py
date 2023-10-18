@@ -138,6 +138,9 @@ def transform_su_box(match):
     color = match.group(2)
     content = match.group(3).strip()
     color_class = color_class_map.get(color, "blue")
+
+    content = re.sub(r'<p>', '<p class="lh-2">', content)
+
     return (f'<div class="{color_class[0]}-highlight">'
             f'<div class="{color_class[0]}-highlight-cont"><img src='
             f'\'{color_class[1]}\'>'
