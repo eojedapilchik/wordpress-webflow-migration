@@ -4,6 +4,7 @@ import requests
 import re
 import datetime
 from bs4 import BeautifulSoup
+from prepross_1 import divide_elements, check_su_note_content
 
 
 def wrap_with_p_tags(content: str) -> str:
@@ -30,6 +31,14 @@ def clean_images_alt_text(text):
 def extract_first_image_url(image_url_field):
     # Split by '%7C%7C' and take the first URL
     return image_url_field.split('||')[0]
+
+def extractH2(centent:str):
+    # motif = r'<h2>(.*?)<\/h2>'
+    # return re.findall(motif, centent, re.DOTALL)
+    soup = BeautifulSoup(centent, 'html.parser')
+    first_h2 = soup.find('h2')
+    # first_h2, _ = divide_elements(s=str(first_h2))
+    return first_h2
 
 
 def fetch_html(permalink):
@@ -66,15 +75,15 @@ def fetch_html(permalink):
         return None
 
 
-def divide_elements(s: str, replace_su_note=True):
-    pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
-    match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
+# def divide_elements(s: str, replace_su_note=True):
+#     pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
+#     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
 
-    su_note = match.group(1) if match else None
-    if replace_su_note:
-        s = re.sub(pattern, '', s, count=1, flags=re.DOTALL)
+#     su_note = match.group(1) if match else None
+#     if replace_su_note:
+#         s = re.sub(pattern, '', s, count=1, flags=re.DOTALL)
 
-    return str(s), str(su_note)
+#     return str(s), str(su_note)
 
 
 def clean_elements(s: str) -> str:
@@ -211,7 +220,6 @@ def process_rows(input_path):
             if title.lower() in titles_to_skip:
                 print(f"Skipping ${title}")
                 continue
-
             if titles_to_include and len(titles_to_include) > 0:
                 if title not in titles_to_include:
                     print(f"Skipping ${title}")
@@ -223,11 +231,12 @@ def process_rows(input_path):
             content = convert_br_tags(content)
             content = add_attribute(content)
             replace = category != "Poszukiwanie pracy"
-            content, su_note = divide_elements(content, replace)
+            content, su_note = divide_elements(content)
             content = fix_div_tags(clean_elements(replace_elements(content)))
             content = remove_images(content)
             content = replace_images_with_attributes(content, 'width="700" height="auto"')
             su_note = clean_elements(replace_elements(su_note))
+            su_note = check_su_note_content(su_note)
 
             row[content_idx] = content
 
@@ -245,6 +254,8 @@ def process_rows(input_path):
 
             # content_html = html_response.get("content", "") if html_response else None
 
+            h2 = headers.index("Letter Tittle")
+            row[h2] = extractH2(content)
             su_note2 = html_response.get("su_note", "") if html_response else None
 
             row.append(meta_title)
@@ -254,8 +265,11 @@ def process_rows(input_path):
             # row.append(content_html)
             yield row
 
+    
+
 
 def process_csv(input_path, output_path):
+    # process_1(input=input_path)
     with open(output_path, 'w', newline='', encoding='utf-8') as out_csv_file:
         writer = csv.writer(out_csv_file)
         index = 0
@@ -327,8 +341,8 @@ def process_csv_batch(input_path, output_folder):
 
 
 def main():
-    input_folder = "input"
-    output_folder = "output"
+    input_folder = "C:/Users/PC/Desktop/RD/wordpress-webflow-migration/input/"
+    output_folder = "C:/Users/PC/Desktop/RD/wordpress-webflow-migration/outputBest"
     batch = True
     # Ensure output folder exists
     if not os.path.exists(output_folder):
@@ -348,7 +362,6 @@ def main():
                 input_file_path = os.path.join(input_folder, filename)
                 process_csv_batch(input_file_path, output_folder)
                 print(f"Processed {filename} and saved to {output_folder}")
-
 
 if __name__ == "__main__":
     main()
