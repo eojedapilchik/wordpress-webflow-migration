@@ -4,7 +4,7 @@ import requests
 import re
 import datetime
 from bs4 import BeautifulSoup
-from prepross_1 import divide_elements, check_su_note_content
+from prepross_1 import check_su_note_content
 
 
 def wrap_with_p_tags(content: str) -> str:
@@ -73,17 +73,6 @@ def fetch_html(permalink):
     except requests.RequestException:
         print(f"[-] Failed to fetch HTML content for {permalink}")
         return None
-
-
-# def divide_elements(s: str, replace_su_note=True):
-#     pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
-#     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
-
-#     su_note = match.group(1) if match else None
-#     if replace_su_note:
-#         s = re.sub(pattern, '', s, count=1, flags=re.DOTALL)
-
-#     return str(s), str(su_note)
 
 
 def clean_elements(s: str) -> str:
