@@ -185,8 +185,37 @@ def transform_su_note(match):
     content = match.group(2).strip()
     content = re.sub(r'<p>', '<p class="lh-2">', content)
     if color == "#fafafa":
+        content = wrap_strong_text_with_p_tags(content)
         return f'<div class="grey-div">\n{content}\n</div><br>'
     return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div><br>'
+
+
+def wrap_strong_text_with_p_tags(text):
+    # Check if the text is within <strong> tags
+    if re.match(r'<strong>.*</strong>', text):
+        if (not re.match(r'<strong><p>.*</p></strong>', text) or
+                not re.match(r'<p><strong>.*</strong></p>', text)):
+            text = f'<strong><p>{text}</p></strong>'
+    return text
+
+
+def split_first_text_within_tags(input_text):
+    match = re.search(r'<p>(.*?)</p>', input_text)
+    if match:
+        # Extract the content of the first <p> element
+        first_p_content = match.group(1)
+
+        matches = re.search(r'<strong>(.*?)</strong>([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4})([0-9\s]+)',
+                            first_p_content)
+
+        if matches:
+            name = matches.group(1)
+            email = matches.group(2)
+            phone = matches.group(3)
+            result = f"<p><strong>{name.strip()}</strong></p>\n<p>{email}</p>\n<p>{phone.strip()}</p>"
+            return result
+
+    return input_text
 
 
 def remove_images(text):
@@ -295,16 +324,10 @@ def process_rows(input_path):
             meta_title = html_response["title"] if html_response else None
             meta_description = html_response["description"] if html_response else None
 
-            # content_html = html_response.get("content", "") if html_response else None
-
-            su_note2 = html_response.get("su_note", "") if html_response else None
-
             row.append(meta_title)
             row.append(meta_description)
             row.append(su_note)
             row.append(h2)
-            # row.append(su_note2)
-            # row.append(content_html)
             yield row
 
 
