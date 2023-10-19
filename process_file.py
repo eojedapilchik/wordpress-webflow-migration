@@ -5,6 +5,19 @@ import re
 import datetime
 from bs4 import BeautifulSoup
 
+TO_SKIP = [
+    13844, 13856, 13929, 13964, 14020, 14062, 14087, 14099, 14143, 14215,
+    14292, 14350, 14380, 14425, 14457, 14464, 14536, 14548, 14594, 14616,
+    14696, 14702, 14712, 14720, 14747, 14767, 0, 14988, 15052, 15061, 15108,
+    15178, 15190, 17311, 17399, 17438, 17450, 17472, 17495, 17514, 17540,
+    17556, 17573, 17581, 17661, 17669, 17674, 17678, 17682, 17688, 17745,
+    17751, 17758, 17765, 17798, 17814, 17838, 17847, 17892, 17904, 17916,
+    17926, 17941, 17952, 17964, 17975, 17987, 17998, 18009, 18019, 18031,
+    18042, 18052, 18062, 18073, 18092, 18101, 18113, 18123, 18134, 18147,
+    18158, 18172, 18183, 18196, 18212, 18237, 18249, 18259, 18273, 18286,
+    17656
+]
+
 
 def wrap_with_p_tags(content: str) -> str:
     lines = content.strip().split("\n")
@@ -26,7 +39,7 @@ def clean_images_alt_text(text):
     # Remove consecutive pipes with no text in between
     images = text.split('||')
     return images[0] if images[0].strip() else ''
-    #return '|'.join([s for s in text.split('|') if s.strip()])
+    # return '|'.join([s for s in text.split('|') if s.strip()])
 
 
 def extract_first_image_url(image_url_field):
@@ -170,16 +183,19 @@ def transform_su_box(match):
 def transform_su_note(match):
     color = match.group(1)
     content = match.group(2).strip()
+    content = re.sub(r'<p>', '<p class="lh-2">', content)
     if color == "#fafafa":
         return f'<div class="grey-div">\n{content}\n</div><br>'
     return f'<div class="blue-highlight">\n<div class="blue-highlight-flex">\n<div>{content}</div>\n</div>\n</div><br>'
 
 
 def remove_images(text):
-    img_pattern = r'<img[^>]*class\s*=\s*"[^"]*alignnone size-full wp-image-\d+[^"]*"[^>]*>'
-    text_without_images = re.sub(img_pattern, '', text)
+    # img_pattern = r'<img[^>]*class\s*=\s*"[^"]*(size-full\s*(aligncenter|wp-image-\d+)[^"]*)"[^>]*>'
+    # text_without_images = re.sub(img_pattern, '', text)
 
-    return text_without_images
+    table_pattern = r'<table[^>]*style=".*?border-collapse:\s*collapse;.*?width:\s*100%;.*?".*?</table>'
+    text_without_tables = re.sub(table_pattern, '', text, flags=re.DOTALL)
+    return text_without_tables
 
 
 def replace_images_with_attributes(text):
@@ -321,6 +337,11 @@ def process_csv_batch(input_path, output_folder):
 
     for row in process_rows(input_path):  # Iterating over the generator
         category = row[10] if len(row) > 10 else None
+        _id = row[0]
+        ids_to_skip = [str(i) for i in TO_SKIP]
+        if _id in ids_to_skip:
+            print(f"Skipping row {_id}")
+            continue
 
         if category == "Poszukiwanie pracy":
             writer = writer_pracy
