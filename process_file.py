@@ -66,15 +66,27 @@ def fetch_html(permalink):
         return None
 
 
-def divide_elements(s: str, replace_su_note=True):
+def divide_elements(s: str, replace_su_note=True, min_word_count=75):
     pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
-
+    h2 = ""
     su_note = match.group(1) if match else None
+    word_count = re.findall(r'\b\w+\b', su_note)
+    if len(word_count) <= min_word_count:
+        su_note = None
+        replace_su_note = False
+
     if replace_su_note:
         s = re.sub(pattern, '', s, count=1, flags=re.DOTALL)
+        su_note, h2 = get_h2_text(su_note)
 
-    return str(s), str(su_note)
+    return str(s), str(su_note), str(h2)
+
+
+def get_h2_text(html):
+    h2_text = re.findall(r'<h2>(.*?)</h2>', html, re.DOTALL)
+    html_without_h2 = re.sub(r'<h2>.*?</h2>', '', html, flags=re.DOTALL)
+    return html_without_h2, h2_text
 
 
 def clean_elements(s: str) -> str:
@@ -217,6 +229,7 @@ def process_rows(input_path):
             headers.append('meta Title')
             headers.append('meta Description')
             headers.append('su_note')
+            headers.append('Letter Tittle')
             # headers.append('su_note2')
             # headers.append('content_html')
 
@@ -240,7 +253,7 @@ def process_rows(input_path):
             content = convert_br_tags(content)
             content = add_attribute(content)
             replace = category != "Poszukiwanie pracy"
-            content, su_note = divide_elements(content, replace)
+            content, su_note, h2 = divide_elements(content, replace)
             content = fix_div_tags(clean_elements(replace_elements(content)))
             content = remove_images(content)
             content = replace_images_with_attributes(content)
@@ -267,6 +280,7 @@ def process_rows(input_path):
             row.append(meta_title)
             row.append(meta_description)
             row.append(su_note)
+            row.append(h2)
             # row.append(su_note2)
             # row.append(content_html)
             yield row
