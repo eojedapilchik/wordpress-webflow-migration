@@ -133,7 +133,7 @@ def add_attribute(s: str) -> str:
 def fix_div_tags(s: str) -> str:
     # Pattern to match <div> tags
     cleaned = s.replace('</div></div><br></p>', '</p></div>\n</div><br>')
-    cleaned = cleaned.replace('</div><br></p>', '</p></div>\n</div>')
+    cleaned = cleaned.replace('</div><br></p>', '</p></div>\n<br>')
     return cleaned
 
 
