@@ -69,10 +69,12 @@ def fetch_html(permalink):
 def divide_elements(s: str, replace_su_note=True, min_word_count=75):
     pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
-    h2 = ""
+    h2 = None
     su_note = match.group(1) if match else None
-    word_count = re.findall(r'\b\w+\b', su_note)
-    if len(word_count) <= min_word_count:
+    words_in_su_note = []
+    if su_note:
+        words_in_su_note = re.findall(r'\b\w+\b', su_note)
+    if len(words_in_su_note) <= min_word_count:
         su_note = None
         replace_su_note = False
 
