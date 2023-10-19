@@ -24,7 +24,9 @@ def wrap_with_p_tags(content: str) -> str:
 
 def clean_images_alt_text(text):
     # Remove consecutive pipes with no text in between
-    return '|'.join([s for s in text.split('|') if s.strip()])
+    images = text.split('||')
+    return images[0] if images[0].strip() else ''
+    #return '|'.join([s for s in text.split('|') if s.strip()])
 
 
 def extract_first_image_url(image_url_field):
@@ -69,8 +71,8 @@ def fetch_html(permalink):
 def divide_elements(s: str, replace_su_note=True, min_word_count=75):
     pattern = r'(\[su_note note_color="#fafafa" text_color="#233143"\](.*?)\[\/su_note\])'
     match = re.search(pattern, s, flags=re.DOTALL)  # re.DOTALL ensures that . matches newline characters as well
-    h2 = None
-    su_note = match.group(1) if match else None
+    h2 = ""
+    su_note = match.group(1) if match else ""
     words_in_su_note = []
     if su_note:
         words_in_su_note = re.findall(r'\b\w+\b', su_note)
@@ -80,15 +82,17 @@ def divide_elements(s: str, replace_su_note=True, min_word_count=75):
 
     if replace_su_note:
         s = re.sub(pattern, '', s, count=1, flags=re.DOTALL)
-        su_note, h2 = get_h2_text(su_note)
+        s, h2 = get_h2_text(s)
 
     return str(s), str(su_note), str(h2)
 
 
 def get_h2_text(html):
     h2_text = re.findall(r'<h2>(.*?)</h2>', html, re.DOTALL)
-    html_without_h2 = re.sub(r'<h2>.*?</h2>', '', html, flags=re.DOTALL)
-    return html_without_h2, h2_text
+    if not h2_text or len(h2_text) == 0:
+        return html, ""
+    html_without_h2 = re.sub(r'<h2>.*?</h2>', '', html, count=1, flags=re.DOTALL)
+    return html_without_h2, h2_text[0]
 
 
 def clean_elements(s: str) -> str:
@@ -253,9 +257,9 @@ def process_rows(input_path):
             wrapped_content = wrap_with_p_tags(row[content_idx])
             content = remove_span_colors(wrapped_content)
             content = convert_br_tags(content)
-            content = add_attribute(content)
             replace = category != "Poszukiwanie pracy"
             content, su_note, h2 = divide_elements(content, replace)
+            content = add_attribute(content)
             content = fix_div_tags(clean_elements(replace_elements(content)))
             content = remove_images(content)
             content = replace_images_with_attributes(content)
