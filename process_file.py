@@ -6,16 +6,6 @@ import datetime
 from bs4 import BeautifulSoup
 
 TO_SKIP = [
-    13844, 13856, 13929, 13964, 14020, 14062, 14087, 14099, 14143, 14215,
-    14292, 14350, 14380, 14425, 14457, 14464, 14536, 14548, 14594, 14616,
-    14696, 14702, 14712, 14720, 14747, 14767, 0, 14988, 15052, 15061, 15108,
-    15178, 15190, 17311, 17399, 17438, 17450, 17472, 17495, 17514, 17540,
-    17556, 17573, 17581, 17661, 17669, 17674, 17678, 17682, 17688, 17745,
-    17751, 17758, 17765, 17798, 17814, 17838, 17847, 17892, 17904, 17916,
-    17926, 17941, 17952, 17964, 17975, 17987, 17998, 18009, 18019, 18031,
-    18042, 18052, 18062, 18073, 18092, 18101, 18113, 18123, 18134, 18147,
-    18158, 18172, 18183, 18196, 18212, 18237, 18249, 18259, 18273, 18286,
-    17656
 ]
 
 
@@ -195,7 +185,7 @@ def wrap_strong_text_with_p_tags(text):
     if re.match(r'<strong>.*</strong>', text):
         if (not re.match(r'<strong><p>.*</p></strong>', text) or
                 not re.match(r'<p><strong>.*</strong></p>', text)):
-            text = f'<strong><p>{text}</p></strong>'
+            text = re.sub(r'<strong>(.*?)</strong>', r'<p class="lh-2"><strong>\1</strong></p>', text)
     return text
 
 
@@ -262,6 +252,16 @@ def replace_elements(input_string):
     return input_string
 
 
+def clean(html):
+    soup = BeautifulSoup(html, 'html.parser', from_encoding='utf-8')
+    balises = soup.find_all()
+    for balise in balises:
+        if not balise.find_parent():
+            balise.extract()
+    html_nettoye = str(soup)
+    return html_nettoye
+
+
 def process_rows(input_path):
     titles_to_skip = [
         "Wzory życiorysów dla analityka biznesowego",
@@ -272,6 +272,13 @@ def process_rows(input_path):
     titles_to_include = [
     ]
 
+    header_map = {
+        "Images Alt Text": "Image Alt text",
+        "Image URL": "Template image",
+        "Content": "Learn more",
+        "Title": "Name"
+    }
+
     titles_to_skip = [title.lower() for title in titles_to_skip]
     with (open(input_path, 'r', encoding='utf-8') as csv_file):
         reader = csv.reader(csv_file)
@@ -279,10 +286,16 @@ def process_rows(input_path):
         if 'content_html' not in headers:
             headers.append('meta Title')
             headers.append('meta Description')
-            headers.append('su_note')
-            headers.append('Letter Tittle')
+            headers.append('Letter')
+            headers.append('Letter title')
             # headers.append('su_note2')
             # headers.append('content_html')
+
+        # Replace headers
+        for column in header_map.keys():
+            column_idx = headers.index(column)
+            if column_idx != -1:
+                headers[column_idx] = header_map[column]
 
         yield headers  # Yield headers first
 
@@ -298,7 +311,7 @@ def process_rows(input_path):
                     print(f"Skipping ${title}")
                     continue
 
-            content_idx = headers.index("Content")
+            content_idx = headers.index("Learn more")
             wrapped_content = wrap_with_p_tags(row[content_idx])
             content = remove_span_colors(wrapped_content)
             content = convert_br_tags(content)
@@ -307,19 +320,24 @@ def process_rows(input_path):
             content = add_attribute(content)
             content = fix_div_tags(clean_elements(replace_elements(content)))
             content = remove_images(content)
-            content = replace_images_with_attributes(content)
-            su_note = clean_elements(replace_elements(su_note))
+            content = clean(replace_images_with_attributes(content))
+            su_note = clean(clean_elements(replace_elements(su_note)))
 
             row[content_idx] = content
 
-            alt_text_idx = headers.index("Images Alt Text")
+            alt_text_idx = headers.index("Image Alt text")
             row[alt_text_idx] = clean_images_alt_text(row[alt_text_idx])
 
-            image_url_idx = headers.index("Image URL")
+            image_url_idx = headers.index("Template image")
             row[image_url_idx] = extract_first_image_url(row[image_url_idx])
 
             permalink_idx = headers.index("Permalink")
-            html_response = fetch_html(row[permalink_idx])
+            try:
+                html_response = fetch_html(row[permalink_idx])
+            except Exception as e:
+                print(f"[-] Failed to fetch HTML content for {row[permalink_idx]}")
+                print(e)
+                html_response = None
 
             meta_title = html_response["title"] if html_response else None
             meta_description = html_response["description"] if html_response else None
