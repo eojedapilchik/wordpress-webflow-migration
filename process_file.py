@@ -354,6 +354,12 @@ def process_csv(input_path, output_path):
         writer = csv.writer(out_csv_file)
         index = 0
         for row in process_rows(input_path):
+            category = row[10] if len(row) > 10 else None
+            _id = row[0]
+            ids_to_skip = [str(i) for i in TO_SKIP]
+            if _id in ids_to_skip:
+                print(f"Skipping row {_id}")
+                continue
             writer.writerow(row)
             print(f"Processed row {index}")
             index += 1
@@ -428,7 +434,7 @@ def process_csv_batch(input_path, output_folder):
 def main():
     input_folder = "input"
     output_folder = "output"
-    batch = True
+    batch = False
     # Ensure output folder exists
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
