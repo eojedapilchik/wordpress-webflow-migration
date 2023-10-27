@@ -9,6 +9,242 @@ TO_SKIP = [
 ]
 
 
+def change_class(html:str) -> str:
+    """_summary_
+
+    Args:
+        html (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+
+    first_span_to_replace = soup.find('span', {'data-color': 'var(--green-10)'})
+
+    if first_span_to_replace:
+        new_element = soup.new_tag('p')
+        new_element.string = first_span_to_replace.get_text()
+        first_span_to_replace.replace_with(new_element)
+
+    other_spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in other_spans_to_remove[1:]:
+        span.extract()
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_span(html:str) -> str:
+    html = change_class(html)
+    soup = BeautifulSoup(html, 'html.parser')
+    spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in spans_to_remove:
+        span.unwrap()
+
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_i_in_li(html:str) -> str:
+    soup = BeautifulSoup(html, 'html.parser')
+    li_elements = soup.find_all('li')
+
+    for li in li_elements:
+        i_elements = li.find_all('i')
+        for i in i_elements:
+            i.extract()
+
+    modified_html = soup.prettify()
+    modified_html = str(modified_html).replace(':white_check_mark:', '').replace(':x:', '')
+    return modified_html
+
+def change_class(html:str) -> str:
+    """_summary_
+
+    Args:
+        html (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+
+    first_span_to_replace = soup.find('span', {'data-color': 'var(--green-10)'})
+
+    if first_span_to_replace:
+        new_element = soup.new_tag('p')
+        new_element.string = first_span_to_replace.get_text()
+        first_span_to_replace.replace_with(new_element)
+
+    other_spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in other_spans_to_remove[1:]:
+        span.extract()
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_span(html:str) -> str:
+    html = change_class(html)
+    soup = BeautifulSoup(html, 'html.parser')
+    spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in spans_to_remove:
+        span.unwrap()
+
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_i_in_li(html:str) -> str:
+    soup = BeautifulSoup(html, 'html.parser')
+    li_elements = soup.find_all('li')
+
+    for li in li_elements:
+        i_elements = li.find_all('i')
+        for i in i_elements:
+            i.extract()
+
+    modified_html = soup.prettify()
+    modified_html = str(modified_html).replace(':white_check_mark:', '').replace(':x:', '')
+    return modified_html
+
+def change_class(html:str) -> str:
+    """_summary_
+
+    Args:
+        html (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+
+    first_span_to_replace = soup.find('span', {'data-color': 'var(--green-10)'})
+
+    if first_span_to_replace:
+        new_element = soup.new_tag('p')
+        new_element.string = first_span_to_replace.get_text()
+        first_span_to_replace.replace_with(new_element)
+
+    other_spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in other_spans_to_remove[1:]:
+        span.extract()
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_span(html:str) -> str:
+    html = change_class(html)
+    soup = BeautifulSoup(html, 'html.parser')
+    spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in spans_to_remove:
+        span.unwrap()
+
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_i_in_li(html:str) -> str:
+    soup = BeautifulSoup(html, 'html.parser')
+    li_elements = soup.find_all('li')
+
+    for li in li_elements:
+        i_elements = li.find_all('i')
+        for i in i_elements:
+            i.extract()
+
+    modified_html = soup.prettify()
+    modified_html = str(modified_html).replace(':white_check_mark:', '').replace(':x:', '')
+    return modified_html
+
+def change_class(html:str) -> str:
+    """_summary_
+
+    Args:
+        html (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+
+    first_span_to_replace = soup.find('span', {'data-color': 'var(--green-10)'})
+
+    if first_span_to_replace:
+        new_element = soup.new_tag('p')
+        new_element.string = first_span_to_replace.get_text()
+        first_span_to_replace.replace_with(new_element)
+
+    other_spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in other_spans_to_remove[1:]:
+        span.extract()
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_span(html:str) -> str:
+    html = change_class(html)
+    soup = BeautifulSoup(html, 'html.parser')
+    spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in spans_to_remove:
+        span.unwrap()
+
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_i_in_li(html:str) -> str:
+    soup = BeautifulSoup(html, 'html.parser')
+    li_elements = soup.find_all('li')
+
+    for li in li_elements:
+        i_elements = li.find_all('i')
+        for i in i_elements:
+            i.extract()
+
+    modified_html = soup.prettify()
+    modified_html = str(modified_html).replace(':white_check_mark:', '').replace(':x:', '')
+    return modified_html
+
+def change_class(html:str) -> str:
+    """_summary_
+
+    Args:
+        html (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+
+    first_span_to_replace = soup.find('span', {'data-color': 'var(--green-10)'})
+
+    if first_span_to_replace:
+        new_element = soup.new_tag('p')
+        new_element.string = first_span_to_replace.get_text()
+        first_span_to_replace.replace_with(new_element)
+
+    other_spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in other_spans_to_remove[1:]:
+        span.extract()
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_span(html:str) -> str:
+    html = change_class(html)
+    soup = BeautifulSoup(html, 'html.parser')
+    spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
+    for span in spans_to_remove:
+        span.unwrap()
+
+    modified_html:str = soup.prettify()
+    return modified_html
+
+def del_i_in_li(html:str) -> str:
+    soup = BeautifulSoup(html, 'html.parser')
+    li_elements = soup.find_all('li')
+
+    for li in li_elements:
+        i_elements = li.find_all('i')
+        for i in i_elements:
+            i.extract()
+
+    modified_html = soup.prettify()
+    modified_html = str(modified_html).replace(':white_check_mark:', '').replace(':x:', '')
+    return modified_html
+
+
 def wrap_with_p_tags(content: str) -> str:
     lines = content.strip().split("\n")
     wrapped_lines = []
@@ -314,6 +550,9 @@ def process_rows(input_path):
             content_idx = headers.index("Learn more")
             wrapped_content = wrap_with_p_tags(row[content_idx])
             content = remove_span_colors(wrapped_content)
+            content = change_class(content)
+            content = del_span(content)
+            content = del_i_in_li(content)
             content = convert_br_tags(content)
             replace = category != "Poszukiwanie pracy"
             content, su_note, h2 = divide_elements(content, replace)
