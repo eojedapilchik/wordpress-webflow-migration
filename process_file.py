@@ -9,7 +9,7 @@ TO_SKIP = [
 ]
 
 
-def change_class(html:str) -> str:
+def change_class(html: str) -> str:
     """_summary_
 
     Args:
@@ -30,20 +30,22 @@ def change_class(html:str) -> str:
     other_spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
     for span in other_spans_to_remove[1:]:
         span.extract()
-    modified_html:str = soup.prettify()
+    modified_html: str = soup.prettify()
     return modified_html
 
-def del_span(html:str) -> str:
+
+def del_span(html: str) -> str:
     html = change_class(html)
     soup = BeautifulSoup(html, 'html.parser')
     spans_to_remove = soup.find_all('span', {'data-color': 'var(--green-10)'})
     for span in spans_to_remove:
         span.unwrap()
 
-    modified_html:str = soup.prettify()
+    modified_html: str = soup.prettify()
     return modified_html
 
-def del_i_in_li(html:str) -> str:
+
+def del_i_in_li(html: str) -> str:
     soup = BeautifulSoup(html, 'html.parser')
     li_elements = soup.find_all('li')
 
