@@ -493,8 +493,8 @@ def process_csv_batch(input_path, output_folder):
 
 
 def main():
-    input_folder = "C:/Users/PC/Desktop/wordpress-webflow-migration/archive"
-    output_folder = "C:/Users/PC/Desktop/wordpress-webflow-migration"
+    input_folder = "input"
+    output_folder = "output"
     batch = True
     # Ensure output folder exists
     if not os.path.exists(output_folder):
