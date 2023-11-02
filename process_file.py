@@ -8,6 +8,21 @@ from bs4 import BeautifulSoup
 TO_SKIP = [
 ]
 
+def delete_p_on_div(html:str) -> str:
+    """_summary_
+
+    Args:
+        html (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+    for p_tag in soup.find_all('p'):
+        if p_tag.find('div'):
+            p_tag.unwrap()
+    modified_html = str(soup)
+    return modified_html
 
 def change_class(html: str) -> str:
     """_summary_
@@ -367,6 +382,7 @@ def process_rows(input_path):
             content = change_class(content)
             content = del_span(content)
             content = del_i_in_li(content)
+            content = delete_p_on_div(content)
             content = convert_br_tags(content)
             replace = category != "Poszukiwanie pracy"
             content, su_note, h2 = divide_elements(content, replace)
