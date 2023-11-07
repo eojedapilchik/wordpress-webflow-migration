@@ -8,6 +8,14 @@ from bs4 import BeautifulSoup
 TO_SKIP = [
 ]
 
+def replace_highlight(texte):
+    pattern = r'\[su_highlight background="#A4EBF3"]([^[]*?)\[/su_highlight]'
+    remplacement = r'<span class="highlight-blue">\1</span>'
+    texte_modifie = re.sub(pattern, remplacement, texte)
+    
+    return texte_modifie
+
+
 def delete_p_on_div(html:str) -> str:
     """_summary_
 
@@ -379,6 +387,7 @@ def process_rows(input_path):
             content_idx = headers.index("Learn more")
             wrapped_content = wrap_with_p_tags(row[content_idx])
             content = remove_span_colors(wrapped_content)
+            content = replace_highlight(content)
             content = change_class(content)
             content = del_span(content)
             content = del_i_in_li(content)
@@ -390,6 +399,7 @@ def process_rows(input_path):
             content = fix_div_tags(clean_elements(replace_elements(content)))
             content = remove_images(content)
             content = clean(replace_images_with_attributes(content))
+            su_note = replace_highlight(su_note)
             su_note = clean(clean_elements(replace_elements(su_note)))
 
             row[content_idx] = content
